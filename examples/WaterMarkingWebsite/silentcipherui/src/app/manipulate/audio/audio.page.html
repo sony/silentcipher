@@ -1,0 +1,151 @@
+<app-header></app-header>
+    <div class="container py-5">
+        <div class="row py-1">
+            <div class="col-lg-2"></div>
+            <div class="col-lg-8 shadow-lg">
+                <div class="row border-bottom p-3">
+                    <div class="col-4 border-right"><span style="float:left; padding-top: 8px" class="pr-2">Upload</span></div>
+                    <div class="col-8">
+                        <input type="file" class="file-input" (change)="onFileSelected($event)" #fileUpload>
+                        <span class="file-upload" style="float:right">
+                            {{fileName || "No file uploaded yet."}}
+                            <img src="/WaterMarkingWebsite/assets/images/upload.png" (click)="fileUpload.click()" class="upload-img">
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-5 py-1" *ngIf="processList.length!=0">
+            <div class="col-lg-2"></div>
+            <div class="col-lg-8 shadow-lg">
+                <div class="row border-bottom p-3" *ngFor="let i of processList; let index=index">
+                    <div class="col-2 border-right"><span style="float:left; padding-top: 8px" class="pr-2">Process: {{index}}</span></div>
+                    <div class="col-9">{{visualize(i)}}</div>
+                    <div class="col-1">
+                        <i class="fa fa-minus-circle fa-lg" style="color: red" (click)="removeProcess(index)"></i>
+                    </div>
+                </div>
+                <div class="text-center py-3">
+                    <button class="btn btn-primary" (click)="applyDistortion()">Apply Distortion</button>
+                    <a *ngIf="distorted_path!=null" class="btn btn-success ml-3" [href]="this.getEnv().SERVER_URL + 'api/files/' + this.distorted_path" download="file.wav">Download Distorted Audio</a>
+                    <button *ngIf="distorted_path!=null" class="btn btn-primary ml-3" (click)="decodeDistortedAudio()">Decode Distorted Audio</button>
+                </div>
+                <div class="text-center py-3" *ngIf="error">
+                    <label class="text-secondary px-2"> Cannot Find Message </label>
+                </div>
+                <div class="text-center py-3" *ngIf="distorted_path!=null && decoded.length!=0">
+                    <div class="custom-form-group">
+                        <label class="text-secondary px-2"> Decoded Message </label>
+                        <span *ngFor="let _ of gen_len(decoded.length); let i = index;">
+                          <input [(ngModel)]="decoded[i]" class="mr-1 heading-3 text-right" style="width: 48px;" disabled>
+                        </span>
+                        <!-- <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;"> -->
+                      </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-5 py-1">
+            <div class="col-lg-2"></div>
+            <div class="col-lg-8 shadow-lg">
+                <div class="p-3">
+                    <div class="text-center pb-4 border-bottom" style="font-size: 24px">Choose Distortion</div>
+                    <div class="py-3 border-bottom">
+                        <table class="w-100" style="table-layout: fixed;">
+                            <tr>
+                                <td rowspan="2" style="width: 25%;">Compression</td>
+                                <td>Type</td>
+                                <td>Bit rate</td>
+                                <td class="text-right" rowspan="2">
+                                    <i class="fa fa-plus-circle fa-lg" style="color: lightgreen" (click)="addProcess({'name': 'compression', 'algorithm': compression_types.value, 'bit_rate': compression_bit_rate.value})"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <select name="compression_types" #compression_types>
+                                        <option value="MP3">MP3</option>
+                                        <option value="AAC">AAC</option>
+                                        <option value="OGG">OGG</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="compression_bit_rate" #compression_bit_rate>
+                                        <option value="64kbps">64kbps</option>
+                                        <option value="128kbps">128kbps</option>
+                                        <option value="256kbps">256kbps</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="py-3 border-bottom">
+                        <table class="w-100" style="table-layout: fixed;">
+                            <tr>
+                                <td rowspan="2" style="width: 25%;">Loudness</td>
+                                <td>Scaling Factor</td>
+                                <td></td>
+                                <td class="text-right" rowspan="2">
+                                    <i class="fa fa-plus-circle fa-lg" style="color: lightgreen" (click)="addProcess({'name': 'amp', 'scale': scale_val.value})"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input style="width: 64px" #scale_val>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="py-3 border-bottom">
+                        <table class="w-100" style="table-layout: fixed;">
+                            <tr>
+                                <td rowspan="2" style="width: 25%;">Crop</td>
+                                <td>StartTime (sec)</td>
+                                <td>EndTime (sec)</td>
+                                <td class="text-right" rowspan="2">
+                                    <i class="fa fa-plus-circle fa-lg" style="color: lightgreen" (click)="addProcess({'name': 'crop', 'startTime': start_time.value, 'endTime': end_time.value})"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input style="width: 64px" #start_time>
+                                </td>
+                                <td>
+                                    <input style="width: 64px" #end_time>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="py-3">
+                        <table class="w-100" style="table-layout: fixed;">
+                            <tr>
+                                <td rowspan="2" style="width: 25%;">Resample</td>
+                                <td>Sampling Rate</td>
+                                <td></td>
+                                <td class="text-right" rowspan="2">
+                                    <i class="fa fa-plus-circle fa-lg" style="color: lightgreen" (click)="addProcess({'name': 'resample', 'sampling_rate': sampling_rate.value})"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input style="width: 64px" #sampling_rate>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- <span style="float:right">
+                        <select name="languages" class="mr-3">
+                            <option value="mp3">MP3 compression</option>
+                            <option value="amp">Change Loudness</option>
+                            <option value="phase_shift">Crop Audio</option>
+                            <option value="resampling">Resample</option>
+                        </select>
+                        <input type="submit" value="Submit" />
+                    </span> -->
+                </div>
+            </div>
+        </div>
+    </div>

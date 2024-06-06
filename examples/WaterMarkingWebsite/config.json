@@ -1,0 +1,17 @@
+{
+    "admin_list": [
+        {
+            "name": "Trial User",
+            "email": "trial@gmail.com",
+            "password": "trial"
+        }
+    ],
+    "name": "WaterMarkingWebsite",
+    "host": {
+        "ip": "43.4.23.101"
+    },
+    "FILE_UPLOAD_DIR": "../../WaterMarkingWebsiteData",
+    "DECODE_UPLOAD_DIR": "../../WaterMarkingWebsiteDataDecode",
+    "FILE_UPLOAD_DIR_REL_MODEL_SERVER": "../WaterMarkingWebsiteData",
+    "DECODE_UPLOAD_DIR_REL_MODEL_SERVER": "../WaterMarkingWebsiteDataDecode"
+}

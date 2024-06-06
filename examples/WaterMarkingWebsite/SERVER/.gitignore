@@ -1,0 +1,2 @@
+.idea
+db.sqlite3

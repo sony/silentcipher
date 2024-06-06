@@ -1,0 +1,21 @@
+[project]
+name = "silentcipher"
+version = "1.0.0"
+authors = [
+  { name="Mayank Kumar Singh", email="mayank.a.singh@sony.com" },
+]
+description = "A small example package"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/sony/silentcipher"
+Issues = "https://github.com/sony/silentcipher/issues"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

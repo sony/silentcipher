@@ -1,0 +1,35 @@
+<app-header #header></app-header>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-2 border-right px-0 bg-dark text-white">
+        <app-projectbar></app-projectbar>
+      </div>
+      <div class="col-lg-10" #container>
+        <div class="container">
+          <div class="row pt-5">
+            <div class="col">
+              <h2 class="text-center shadow-sm p-3">
+                Choose which media you want to add watermarking to
+              </h2>
+            </div>
+          </div>
+          <div class="row my-5 py-3">
+            <div class="col-md-3"></div>
+            <div class="col-md-6 py-3">
+              <div class="shadow mr-1 clickable my-lst" routerLink="/new/audio">
+                <img src="/WaterMarkingWebsite/assets/images/AudioWatermarking.png" class="w-100">
+                <!-- /WaterMarkingWebsite -->
+              </div>
+            </div>
+            <!-- <div class="col-md-6 py-3">
+              <div class="shadow ml-1">
+                <img src="/WaterMarkingWebsite/assets/images/VideoWatermarking.png" class="w-100">
+              </div>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  

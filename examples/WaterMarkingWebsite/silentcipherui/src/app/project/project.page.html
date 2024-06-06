@@ -1,0 +1,134 @@
+<app-header #header></app-header>
+
+<div class="container-fluid">
+  <div class="row min-vh-100" #container>
+    <div class="col-lg-2 border-right px-0 bg-dark text-white">
+      <app-projectbar [name]="project.name" (click)="ngOnInit()"></app-projectbar>
+    </div>
+    <div class="col-lg-10 pb-5" #content>
+      <h1 class="text-center py-3" style="text-decoration: underline">{{project.name}}</h1>
+      <div>
+        <h2 class="text-center">Original Audio</h2>
+        <div style="position: relative; width: 100%;" class="pb-3">
+          <!-- <i class="fa fa-play-circle" style="position: absolute; top: 20px; bottom: 0; left: 0px; font-size: 100px; color: purple" name="play" class="clickable" *ngIf="paused"  (click)="wr.playPause()"></i> -->
+          <i style="position: absolute; top: 20px; bottom: 0; left: 5px; font-size: 90px; color: #5cb85c" class="clickable fa fa-play" *ngIf="paused"  (click)="wr.playPause()"></i>
+          <i style="position: absolute; top: 20px; bottom: 0; left: 0px; font-size: 90px; color: #5cb85c" class="clickable fa fa-pause" *ngIf="!paused" (click)="wr.playPause()"></i>
+          <a [href]="this.getEnv().SERVER_URL + 'api/files/' + this.project._id + '.' + this.project.extension" download="file.wav">
+            <i class="fa fa-cloud-download clickable" style="position: absolute; top: 20px; bottom: 0; right: 0px; font-size: 90px; color: #5cb85c"></i>
+          </a>
+          <!-- <div style="position: relative; top: 0; bottom: 0; left: 100px;" id="waveform"></div> -->
+          <div style="position: relative; top: 0; bottom: 0; left: 100px;" #waveform></div>
+        </div>
+      </div>
+      
+      <div class="pt-5" *ngIf="project.encoded">
+        <h2 class="text-center">Message Encoded Audio</h2>
+        <div style="position: relative; width: 100%;" class="pb-5">
+          <!-- <i class="fa fa-play-circle" style="position: absolute; top: 20px; bottom: 0; left: 0px; font-size: 100px; color: purple" name="play" class="clickable" *ngIf="paused"  (click)="wr.playPause()"></i> -->
+          <i style="position: absolute; top: 20px; bottom: 0; left: 5px; font-size: 90px; color: #5cb85c" class="clickable fa fa-play" *ngIf="encoded_paused"  (click)="wr_encoded.playPause()"></i>
+          <i style="position: absolute; top: 20px; bottom: 0; left: 0px; font-size: 90px; color: #5cb85c" class="clickable fa fa-pause" *ngIf="!encoded_paused" (click)="wr_encoded.playPause()"></i>
+          <a [href]="this.getEnv().SERVER_URL + 'api/files/' + this.project._id + '_encoded.' + this.project.extension" [download]="this.project.file">
+            <i style="position: absolute; top: 20px; bottom: 0; right: 0px; font-size: 90px; color: #5cb85c" class="clickable fa fa-cloud-download"></i></a>
+          <div style="position: relative; top: 0; bottom: 0; left: 100px;" #encoded_waveform></div>
+        </div>
+      </div>
+      <div class="row" *ngIf="project.encoded">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+          <div class="shadow mx-3 p-5 bg-white" style="border-radius: 20px;">
+            <div class="row">
+              <div class="col-lg-6">
+                <div style="font-size: 36px;">Decode Message</div>
+                <div style="font-size: 20px;" class="pt-5 pr-5">
+                  You can test if the model is able to decode the current project by clicking on decode audio button.<br>
+                  If you want to decode an audio from a different project, click on the Decode button on the top-right.
+                </div>
+              </div>
+              <div class="col-lg-6 py-5">
+                <div class="py-1 text-left">
+                  <div class="custom-form-group">
+                    <label class="text-secondary px-2"> Embedded Message </label>
+                    <span *ngFor="let _ of gen_len(model_options[project.selected].message_len); let i = index;">
+                      <input type="text" [(ngModel)]="project.message[i]" (keyup)="check_message_i(i)" class="mr-1heading-3 text-right" style="width: 48px;" [ngClass]="{'wrong_input': project.error[i]}">
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right py-3"><button class="btn btn-primary" (click)="encode()">Modify Message</button></div>
+                <div class="py-1 text-left">
+                  <div class="custom-form-group">
+                    <label class="text-secondary px-2"> Decoded Message </label>
+                    <span *ngFor="let _ of gen_len(model_options[project.selected].message_len); let i = index;">
+                      <input [(ngModel)]="decoded[i]" class="mr-1 heading-3 text-right" style="width: 48px;" disabled>
+                    </span>
+                    <!-- <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;"> -->
+                  </div>
+                </div>
+                <div class="text-right pt-3">
+                  <span *ngIf="this.decoded[0]!=null">
+                    <img src="/WaterMarkingWebsite/assets/images/correct.png" class="mr-1" style="width: 30px" *ngIf="check_match()">
+                    <img src="/WaterMarkingWebsite/assets/images/wrong.png" class="mr-1" style="width: 30px" *ngIf="!check_match()">
+                  </span>
+                  <button class="btn btn-primary heading-3" (click)="decode()">Decode Audio</button>
+                </div>
+              </div>
+            </div>
+            <div class="row py-2" *ngIf="project.encoded">
+              <div class="col-3 border-right"><span style="float:left;" class="pr-2 heading-3">Signal to Noise Ratio</span></div>
+              <div class="col-9">
+                <span style="float:right">
+                  {{project.sdr}}dB
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" *ngIf="!project.encoded">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+          <div class="shadow mx-3 p-5 bg-white" style="border-radius: 20px;">
+            <div class="row">
+              <div class="col-lg-6">
+                <div style="font-size: 36px;">Embed a message</div>
+                <div style="font-size: 20px;" class="pt-5 pr-5">
+                  You can embed a 40 bit message inside the audio file.<br>
+                  The message is of the format: A-B-C-D-E, where A, B, C, D, E are numbers which lie in the range of 0-255 (both included)
+                </div>
+              </div>
+              <div class="col-lg-6 py-5">
+                <div class="py-1 pt-5 text-left">
+                  <div class="custom-form-group">
+                    <label class="text-secondary px-2"> Message </label>
+                    <span *ngFor="let _ of gen_len(model_options[project.selected].message_len); let i = index;">
+                      <input type="text" [(ngModel)]="project.message[i]" (keyup)="check_message_i(i)" class="mr-1 heading-3 text-right" style="width: 48px;" [ngClass]="{'wrong_input': project.error[i]}">
+                      <!--  -->
+                    </span>
+                    <!-- <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;"> -->
+                  </div>
+                </div>
+                <div class="text-right pt-3"><button class="btn btn-primary" (click)="encode()">Embed Message</button></div>
+              </div>
+            </div>
+          </div>
+          <!-- <div class="shadow-lg mx-3 p-3">
+            <div class="row pb-2 border-bottom">
+              <div class="col-3">Model Type</div>
+              <div class="col-9">
+                <div class="row">
+                  <div class="col" *ngFor="let _ of model_options; let i = index;"><input type="checkbox" [checked]="project.selected==i" (click)="select(i)"> {{_.desc}}</div>
+                </div>
+              </div>
+            </div>
+          </div> -->
+        </div>
+      </div>
+      <!-- <div class="row py-1">
+        <div class="col-4 border-right"><span style="float:left; height: 40px; padding-top:8px" class="pr-2">Encoded Audio</span></div>
+        <div class="col-8">
+          <audio class="w-100" [src]="getEnv().SERVER_URL + 'api/files/' + project._id + '_encoded.' + project.extension" preload="auto" controls></audio>
+        </div>
+      </div> -->
+    </div>
+  </div>
+</div>
+  

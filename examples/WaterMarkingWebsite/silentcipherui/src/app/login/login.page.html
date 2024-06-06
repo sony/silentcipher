@@ -1,0 +1,25 @@
+<app-header></app-header>
+<div class="container">
+  <div class="row mt-5 pt-5">
+    <div class="col-lg-3"></div>
+    <div class="col-lg-6">
+      <div class="shadow p-4">
+        <p class="text-center heading mt-3"><img src="/WaterMarkingWebsite/assets/images/Logo.png" style="width:35px" class="mr-3">Watermarking Portal</p>
+        <!-- /WaterMarkingWebsite -->
+        <h2 class="heading-2 text-center pb-1 mb-0">Sign in</h2>
+        <h2 class="heading-3 text-center pt-1 mt-0 pb-4">to continue</h2>
+        <div class="px-4 pb-2">
+          <input class="py-4 px-3 w-100 form-control heading-3" style="border-radius: 5px;" type="text" placeholder="your.email@org.com" [(ngModel)]="email">
+        </div>
+        <div class="px-4 pb-4">
+          <input class="py-4 px-3 w-100 form-control heading-3" type="password" placeholder="password" style="border-radius: 5px;" [(ngModel)]="password" (keyup.enter)="loginService.login(email, password)">
+        </div>
+        <div class="row pb-5 pr-4">
+          <div class="col">
+            <button class="mt-3 py-1 px-4 ml-3 btn btn-primary" style="float: right;" (click)="loginService.login(email, password)">Login</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

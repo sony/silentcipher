@@ -1,0 +1,13 @@
+<div *ngIf="loginService.user_data != null">
+  <div class="p-3 heading-2">YOUR PROJECTS</div>
+  <div class="border-bottom hover" *ngFor="let i of loginService.user_data.projects; let thisIndex=index;">
+    <div class="py-2 pl-3 clickable heading-3" [routerLink]="['/project', i._id]" [ngClass]="{'bg-white text-dark': i.name === name}" >{{i.name}}</div>
+  </div>
+  <div class="border-bottom heading-3 hover">
+    <div class="pr-3 py-3 pl-3 clickable" routerLink="/new/audio" [ngClass]="{'bg-white text-dark': getWindow().location.pathname=='/WaterMarkingWebsite/new' || getWindow().location.pathname=='/WaterMarkingWebsite/new/audio' || getWindow().location.pathname=='/WaterMarkingWebsite/new/video'}">
+      <span style="vertical-align:middle;">Start New Project</span> <span class="pl-2" style="vertical-align:middle; float:right">
+        <i class="fa fa-plus-circle fa-lg text-success"></i>
+      </span>
+    </div>
+  </div>  
+</div>

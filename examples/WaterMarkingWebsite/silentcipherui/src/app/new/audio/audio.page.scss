@@ -1,0 +1,31 @@
+.file-input {
+    display: none;
+}
+.upload-img {
+    width: 60px;
+}
+.upload-img:hover {
+    box-shadow:0 10px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    border-radius: 50%;
+}
+
+.custom-form-group{
+    padding:10px;
+    border:1px solid #d3d3d3;
+    border-radius: 4px;
+    // margin:10px;
+  }
+.custom-form-group>label{
+    position:relative;
+    top:-29px;
+    left:5px;
+    background-color:white;
+}
+  
+.custom-form-group>input{
+    border:none;
+}
+
+textarea:focus, input:focus{
+    outline: none;
+}

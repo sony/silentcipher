@@ -1,0 +1,45 @@
+<app-header #header></app-header>
+
+  <div class="container-fluid bg-light">
+    <div class="row min-vh-100">
+      <div class="col-lg-2 border-right px-0 bg-dark text-white">
+        <app-projectbar></app-projectbar>
+      </div>
+      <div class="col-lg-10" #container>
+        <div class="container">
+          <div class="row pt-5 mt-5">
+            <div class="col-lg-12 pt-5">
+              <div class="shadow mx-3 p-5 bg-white" style="border-radius: 20px;">
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div style="font-size: 36px;">Create<br>New Project</div>
+                  </div>
+                  <div class="col-lg-6 pt-5">
+                    <div class="row py-1 pt-5 text-center">
+                      <!-- <div class="col-4 border-right"><span style="float:left; padding-top:8px" class="pr-2">Upload</span></div> -->
+                      <div class="col">
+                        <input type="file" class="file-input" (change)="onFileSelected($event)" accept=".wav,.mp3,.aac,.ogg,.flac,.alac,.aiff,.dsd,.pcm,.MP4,.MOV,.WMV,.AVI,.AVCHD,.FLV,.F4V,.SWF,.MKV,.WEBM" #fileUpload>
+                        <span class="file-upload" style="font-size: 18px">
+                          <span class="pr-2">{{fileName ? "Change Audio" : "Upload Audio"}}</span>
+                          <img src="/WaterMarkingWebsite/assets/images/upload.png" (click)="fileUpload.click()" class="upload-img">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="py-1 pt-3 text-left">
+                      <div class="custom-form-group">
+                        <label class="text-secondary px-2"> Project Name </label>
+                        <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;">
+                      </div>
+                    </div>
+                    <div class="text-right pt-3"><button class="btn btn-primary" (click)="submit()">Create Project</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
