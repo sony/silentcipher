@@ -5,3 +5,4 @@ soundfile==0.12.1
 scipy==1.11.4
 pyaml==24.4.0
 Flask==2.2.5
+pydub

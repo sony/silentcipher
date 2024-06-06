@@ -133,14 +133,16 @@ def encode_project(request, **kwargs):
         project_id = ObjectId(data['project']['_id'])
         data['project']['message'] = [int(_) for _ in data['project']['message']]
         del data['project']['_id']
-        try:
-            result = json.loads(requests.post(settings.ENCODE_URL, json={
-                'in_path': settings.FILE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + str(project_id) + '.' + data['project']['extension'],
-                'out_path': settings.FILE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + str(project_id) + '_encoded.' + data['project']['extension'],
-                'message': data['project']['message']
-            }).text)
-        except:
-            return JsonResponse({'status': False})
+        # try:
+        result = json.loads(requests.post(settings.ENCODE_URL, json={
+            'model_type': data['model_type'],
+            'in_path': settings.FILE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + str(project_id) + '.' + data['project']['extension'],
+            'out_path': settings.FILE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + str(project_id) + '_encoded.' + data['project']['extension'],
+            'message': data['project']['message'],
+            'message_sdr': data['message_sdr']
+        }).text)
+        # except:
+        #     return JsonResponse({'status': False})
         
         print(result)
         data['project']['encoded'] = result['status']
@@ -170,6 +172,7 @@ def decode(request, **kwargs):
 
         try:
             result = json.loads(requests.post(settings.DECODE_URL, json={
+                'model_type': request.POST.get('model_type'),
                 'path': settings.DECODE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + str(_id) + '.' + extension,
                 'phase_shift_decoding': request.POST.get('phase_shift_decoding'),
             }).text)
@@ -192,10 +195,12 @@ def decode_file_location(request, **kwargs):
         data = json.loads(request.body)
         path = data['path']
         phase_shift_decoding = data['phase_shift_decoding']
+        model_type = data['model_type']
         encoded_file_path = settings.FILE_UPLOAD_DIR_REL_MODEL_SERVER + '/' + path
 
         try:
             result = json.loads(requests.post(settings.DECODE_URL, json={
+                'model_type': model_type,
                 'path': encoded_file_path,
                 'phase_shift_decoding': phase_shift_decoding
             }).text)

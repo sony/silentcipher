@@ -6,6 +6,7 @@ import numpy as np
 import soundfile as sf
 from scipy import stats as st
 import librosa
+from pydub import AudioSegment
 import torch
 from torch import nn
 
@@ -42,13 +43,10 @@ class Model():
         self.dec_c = CarrierDecoder(config=self.config,
                                     conv_dim=self.dec_c_conv_dim,
                                     n_layers=self.config.dec_c_n_layers,
-                                    message_sdr=self.config.message_sdr,
                                     message_band_size=self.config.message_band_size)
 
         self.dec_m = [MsgDecoder(message_dim=self.message_dim,
-                                 carrier_access=self.config.decoder_access_source,
-                                 message_band_size=self.config.message_band_size,
-                                 message_SDR_cond=self.config.dataset_based_SDR) for _ in range(self.n_messages)]
+                                 message_band_size=self.config.message_band_size) for _ in range(self.n_messages)]
         # ------ make parallel ------
         if self.device != 'cpu':
             self.enc_c = nn.DataParallel(self.enc_c)
@@ -131,15 +129,31 @@ class Model():
         sdr = 20 * np.log10(rms1 / rms2)
         return sdr
 
-    def encode(self, in_path, out_path, message):
+    def load_audio(self, path):
+
+        # return librosa.load(in_path, sr=None)
+
+        audio = AudioSegment.from_file(path)
+        return (np.array(audio.get_array_of_samples(), dtype=np.float32).reshape((-1, audio.channels)) / (
+            1 << (8 * audio.sample_width - 1)))[:, 0], audio.frame_rate, audio.channels
+
+    def encode(self, in_path, out_path, message, message_sdr=None):
+
+        if message_sdr is None:
+            message_sdr = self.config.message_sdr
+            print(f'Using the default SDR of {self.config.message_sdr} dB')
 
         with torch.no_grad():
 
             start = time.time()
-        
-            y, orig_sr = librosa.load(in_path, sr=None)
+
+            y, orig_sr, channels = self.load_audio(in_path)
+            if channels != 1:
+                return {'status': False, 'message': 'Currently only supporting single channel audio'}
             orig_y = y.copy()
             if orig_sr != self.sr:
+                if orig_sr > self.sr:
+                    print(f'WARNING! Reducing the sampling rate of the original audio from {orig_sr} -> {self.sr}. High frequency components may be lost!')
                 y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
             original_power = np.mean(y**2)
 
@@ -172,7 +186,7 @@ class Model():
             # print(carrier_enc.shape, carrier.shape, msg_enc.shape)
             merged_enc = torch.cat((carrier_enc, carrier.repeat(1, 32, 1, 1), msg_enc.repeat(1, 32, 1, 1)), dim=1)  # concat encodings on features axis
             
-            message_info = self.dec_c(merged_enc, self.config.message_sdr)
+            message_info = self.dec_c(merged_enc, message_sdr)
             if self.config.frame_level_normalization:
                 message_info = message_info*(torch.mean((carrier**2), dim=2, keepdim=True)**0.5)  # *time_weighing
             elif self.config.utterance_level_normalization:
@@ -203,13 +217,14 @@ class Model():
             sdr = self.sdr(orig_y, y)
             sf.write(out_path, y, orig_sr)
             
-        return {'status': True, 'sdr': f'{sdr:.2f}'}
+        return {'status': True, 'sdr': f'{sdr:.2f}', 'time_taken': time_taken, 'time_taken_per_second': time_taken / (y.shape[0] / orig_sr)}
     
     def decode(self, path, phase_shift_decoding):
-        # print(path, phase_shift_decoding)
         try:
             with torch.no_grad():
-                y, orig_sr = librosa.load(path, sr=None)
+                y, orig_sr, channels = self.load_audio(path)
+                if channels != 1:
+                    return {'status': False, 'message': 'Currently only supporting single channel audio'}
                 if orig_sr != self.sr:
                     y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
                 original_power = np.mean(y**2)
@@ -254,7 +269,11 @@ class Model():
         except:
             return {'messages': [], 'confidences': [], 'error': 'Could not find message', 'status': False}
     
-    def encode_wav(self, y, orig_sr, message):
+    def encode_wav(self, y, orig_sr, message, message_sdr=None):
+
+        if message_sdr is None:
+            message_sdr = self.config.message_sdr
+            print(f'Using the default SDR of {self.config.message_sdr} dB')
 
         with torch.no_grad():
 
@@ -262,6 +281,8 @@ class Model():
         
             orig_y = y.copy()
             if orig_sr != self.sr:
+                if orig_sr > self.sr:
+                    print(f'WARNING! Reducing the sampling rate of the original audio from {orig_sr} -> {self.sr}. High frequency components may be lost!')
                 y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
             original_power = np.mean(y**2)
 
@@ -294,7 +315,7 @@ class Model():
             # print(carrier_enc.shape, carrier.shape, msg_enc.shape)
             merged_enc = torch.cat((carrier_enc, carrier.repeat(1, 32, 1, 1), msg_enc.repeat(1, 32, 1, 1)), dim=1)  # concat encodings on features axis
             
-            message_info = self.dec_c(merged_enc, self.config.message_sdr)
+            message_info = self.dec_c(merged_enc, message_sdr)
             if self.config.frame_level_normalization:
                 message_info = message_info*(torch.mean((carrier**2), dim=2, keepdim=True)**0.5)  # *time_weighing
             elif self.config.utterance_level_normalization:
@@ -395,6 +416,11 @@ class Model():
 def get_model(model_type='44.1k', ckpt_path='../Models/44_1_khz/73999_iteration', config_path='../Models/44_1_khz/73999_iteration/hparams.yaml', device='cpu'):
 
     if model_type == '44.1k':
+        config = yaml.safe_load(open(config_path))
+        config = argparse.Namespace(**config)
+        config.load_ckpt = ckpt_path
+        model = Model(config, device)
+    elif model_type == '16k':
         config = yaml.safe_load(open(config_path))
         config = argparse.Namespace(**config)
         config.load_ckpt = ckpt_path

@@ -30,6 +30,8 @@ export class ProjectPage implements OnInit {
   wr = null;
   wr_encoded = null;
   decoded = [];
+  user_provided_SDR=-1;
+  model_type='44k';
 
   // model_options = [
   //   {
@@ -108,6 +110,8 @@ export class ProjectPage implements OnInit {
       name: '',
       sdr: -1
     };
+    this.user_provided_SDR = -1;
+    this.model_type = '44k';
     this.paused = true;
     this.encoded_paused = true;
     this.decoded = Array<number>(this.model_options[this.project.selected].message_len).fill(null);
@@ -246,7 +250,12 @@ export class ProjectPage implements OnInit {
     this.check_message();
     this.project.encoded = false;
     this.decoded = Array<number>(this.model_options[this.project.selected].message_len).fill(null);
-    this.http.post(environment.SERVER_URL + 'api/encode_project', {email: this.loginService.email, project: this.project}, {params: {loading: 'true'}}).subscribe((res: any) => {
+    this.http.post(environment.SERVER_URL + 'api/encode_project', {
+      email: this.loginService.email, 
+      project: this.project, 
+      message_sdr: this.user_provided_SDR == -1? null: this.user_provided_SDR,
+      model_type: this.model_type
+    }, {params: {loading: 'true'}}).subscribe((res: any) => {
       if (res.status){
         this.project = res.project;
         this.cd.detectChanges();
@@ -266,7 +275,11 @@ export class ProjectPage implements OnInit {
       return;
     }
     console.log('Decoding')
-    this.http.post(environment.SERVER_URL + 'api/decode_file_location', {path: this.project._id + '_encoded.' + this.project.extension, phase_shift_decoding: environment.phase_shift_decoding}, {params: {loading: 'true'}}).subscribe((res: any) => {
+    this.http.post(environment.SERVER_URL + 'api/decode_file_location', {
+      path: this.project._id + '_encoded.' + this.project.extension, 
+      phase_shift_decoding: environment.phase_shift_decoding,
+      model_type: this.model_type
+    }, {params: {loading: 'true'}}).subscribe((res: any) => {
       if (res.status){
         this.decoded = res.decode.messages[0]
       }

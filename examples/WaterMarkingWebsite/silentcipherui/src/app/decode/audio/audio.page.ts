@@ -38,6 +38,8 @@ export class AudioPage implements OnInit {
     }
   ]
 
+  model_type = '44k';
+
   constructor(private notificationService: NotificationService, private router: Router, private http: HttpClient, private loginService: LoginService) {}
 
   gen_len(num){
@@ -64,6 +66,7 @@ export class AudioPage implements OnInit {
     }
     this.formData.append("type", 'audio');
     this.formData.append("phase_shift_decoding", environment.phase_shift_decoding);
+    this.formData.append("model_type", this.model_type);
     this.http.post(environment.SERVER_URL + 'api/decode', this.formData, {params: {loading: 'true'}}).subscribe((res: any) => {
       if (res.status){
         this.message = res.decode.messages[0];
@@ -81,6 +84,7 @@ export class AudioPage implements OnInit {
 
   ngOnInit() {
     this.formData = new FormData();
+    this.model_type = '44k';
   }
 
 }

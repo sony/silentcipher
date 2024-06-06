@@ -15,6 +15,7 @@ class STFT(torch.nn.Module, metaclass=Singleton):
         self.hop_len = hop_length
         self.win_len = filter_length
         self.window = torch.hann_window(self.win_len)
+        self.num_samples = -1
 
     def transform(self, x):
         x = torch.nn.functional.pad(x, (0, self.win_len - x.shape[1]%self.win_len))

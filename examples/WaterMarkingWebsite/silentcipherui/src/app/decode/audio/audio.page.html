@@ -1,6 +1,31 @@
 <app-header></app-header>
 
 <div class="container-fluid" class="h-100">
+  <div class="row mb-3 mt-3">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+      <div class="shadow mx-3 p-5 bg-white" style="border-radius: 20px;">
+        <div class="row">
+          <div class="col-lg-6">
+            <div style="font-size: 36px;">Configuration</div>
+            <div style="font-size: 18px;" class="pt-5 pr-5">
+              You can choose if you want to use the 16khz model or the 44.1khz model.
+            </div>
+          </div>
+          <div class="col-lg-6 py-5">
+            <div class="py-1 text-left">
+              <label class="text-secondary px-2"> Model Type: </label>
+              <label class="text-secondary px-2" for="model_type_44k"> 44kHz </label>
+              <input [(ngModel)]="model_type" value="44k" type="radio" name="model_type" class="mr-1 heading-3 text-right" style="width: 48px;" id="model_type_44k">
+              <label class="text-secondary px-2" for="model_type_16k"> 16kHz </label>
+              <input [(ngModel)]="model_type" value="16k" type="radio" name="model_type" class="mr-1 heading-3 text-right" style="width: 48px;" id="model_type_16k">
+              <!-- <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;"> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="row py-5 my-5">
     <!-- <div class="col-md-3"></div> -->
     <div class="col-md-3"></div>

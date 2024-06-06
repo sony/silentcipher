@@ -7,7 +7,8 @@ Currently this repository supports audio at 16kHz and 44.1kHz.<br>
 Checkout our [paper](URL) for more details.
 
 [[`arXiv`](URL)]
-[[`Colab notebook`](COLAB_URL)][[🤗`Hugging Face`](HUGGINGFACE)]
+[[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
+<!-- [[🤗`Hugging Face`](HUGGINGFACE)] -->
 
 ![fig](assets/figure.png)
 
@@ -58,6 +59,7 @@ pip install dist/<package>.whl
 SilentCipher provides a simple API to watermark and detect the watermarks from an audio sample. Example usage:
 
 ```python
+import librosa
 import silentcipher
 
 model = silentcipher.get_model(
@@ -71,7 +73,12 @@ model = silentcipher.get_model(
 y, sr = librosa.load('test.wav', sr=None)
 
 # The message should be in the form of five 8-bit characters, giving a total message capacity of 40 bits 
+
 encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11])
+
+# You can specify the message SDR (in dB) along with the encode_wav function. But this may result in unexpected detection accuracy
+# encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11], message_sdr=47)
+
 result = model.decode_wav(encoded, sr, phase_shift_decoding=False)
 
 assert result['status']
@@ -81,7 +88,12 @@ assert result['confidences'][0] == 1, result['confidences'][0]
 # Encode from filename
 
 # The message should be in the form of five 8-bit characters, giving a total message capacity of 40 bits 
+
 model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
+
+# You can specify the message SDR (in dB) along with the encode function. But this may result in unexpected detection accuracy
+# model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11], message_sdr=47)
+
 result = model.decode('encoded.wav', phase_shift_decoding=False)
 
 assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]

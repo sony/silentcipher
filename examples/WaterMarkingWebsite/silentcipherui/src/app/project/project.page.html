@@ -32,6 +32,37 @@
           <div style="position: relative; top: 0; bottom: 0; left: 100px;" #encoded_waveform></div>
         </div>
       </div>
+      <div class="row mb-3">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+          <div class="shadow mx-3 p-5 bg-white" style="border-radius: 20px;">
+            <div class="row">
+              <div class="col-lg-6">
+                <div style="font-size: 36px;">Configuration</div>
+                <div style="font-size: 18px;" class="pt-5 pr-5">
+                  You can choose if you want to use the 16khz model or the 44.1khz model.<br>
+                  You can also modify the SDR, but beware that the model may behave unexpectedly.
+                  If you want to use the default SDR, let the SDR field be -1.
+                </div>
+              </div>
+              <div class="col-lg-6 py-5">
+                <div class="py-1 text-left">
+                  <label class="text-secondary px-2"> Model Type: </label>
+                  <label class="text-secondary px-2" for="model_type_44k"> 44kHz </label>
+                  <input [(ngModel)]="model_type" value="44k" type="radio" name="model_type" class="mr-1 heading-3 text-right" style="width: 48px;" id="model_type_44k">
+                  <label class="text-secondary px-2" for="model_type_16k"> 16kHz </label>
+                  <input [(ngModel)]="model_type" value="16k" type="radio" name="model_type" class="mr-1 heading-3 text-right" style="width: 48px;" id="model_type_16k">
+                  <!-- <input type="text" [(ngModel)]="projectName" style="width:70%; border: none; position: relative; top: 0; left: -75px; font-size: 20px;"> -->
+                </div>
+                <div class="py-1 text-left">
+                    <label class="text-secondary px-2"> SDR (dB): </label>
+                    <input type="text" [(ngModel)]="user_provided_SDR" class="mr-1 heading-3 text-right" style="width: 48px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="row" *ngIf="project.encoded">
         <div class="col-md-2"></div>
         <div class="col-md-8">
@@ -49,7 +80,7 @@
                   <div class="custom-form-group">
                     <label class="text-secondary px-2"> Embedded Message </label>
                     <span *ngFor="let _ of gen_len(model_options[project.selected].message_len); let i = index;">
-                      <input type="text" [(ngModel)]="project.message[i]" (keyup)="check_message_i(i)" class="mr-1heading-3 text-right" style="width: 48px;" [ngClass]="{'wrong_input': project.error[i]}">
+                      <input type="text" [(ngModel)]="project.message[i]" (keyup)="check_message_i(i)" class="heading-3 text-right" style="width: 48px;" [ngClass]="{'wrong_input': project.error[i]}">
                     </span>
                   </div>
                 </div>
