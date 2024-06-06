@@ -44,7 +44,7 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
-**Note**: We will be uploading the model checkpoints soon. Stay Tuned!
+**Note**: We will be uploading the model checkpoints soon. Stay Tuned!<br>
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
 
 
