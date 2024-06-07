@@ -4,7 +4,7 @@
 
 Code for SilentCipher, a method of embedding watermarking in any audio with state-of-the-art robustness.<br>
 Currently this repository supports audio at 16kHz and 44.1kHz.<br>
-Checkout our [paper](URL) for more details.
+Checkout our [paper](https://arxiv.org/abs/2406.03822) for more details.
 
 [[`arXiv`](https://arxiv.org/abs/2406.03822)]
 [[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
