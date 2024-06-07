@@ -79,6 +79,9 @@ encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11])
 # You can specify the message SDR (in dB) along with the encode_wav function. But this may result in unexpected detection accuracy
 # encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11], message_sdr=47)
 
+# You should set phase_shift_decoding to True when you want the decoder to be robust to audio crops.
+# !Warning, this can increase the decode time quite drastically.
+
 result = model.decode_wav(encoded, sr, phase_shift_decoding=False)
 
 print(result['status'])
@@ -93,6 +96,9 @@ model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
 
 # You can specify the message SDR (in dB) along with the encode function. But this may result in unexpected detection accuracy
 # model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11], message_sdr=47)
+
+# You should set phase_shift_decoding to True when you want the decoder to be robust to audio crops.
+# !Warning, this can increase the decode time quite drastically.
 
 result = model.decode('encoded.wav', phase_shift_decoding=False)
 
