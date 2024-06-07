@@ -1,6 +1,6 @@
-Django==3.1.4
+Django==5.0.6
 django-cors-headers==3.6.0
-pymongo==3.11.2
+pymongo==4.7.3
 requests==2.32.2
 passlib==1.7.4
 librosa==0.10.2.post1
