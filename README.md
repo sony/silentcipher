@@ -65,7 +65,8 @@ import silentcipher
 model = silentcipher.get_model(
     model_type='44.1k', # 16k
     ckpt_path='../Models/44_1_khz/73999_iteration', 
-    config_path='../Models/44_1_khz/73999_iteration/hparams.yaml'
+    config_path='../Models/44_1_khz/73999_iteration/hparams.yaml',
+    device='cuda'  # use 'cpu' if you want to run it without GPUs
 )
 
 # Encode from waveform
