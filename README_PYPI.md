@@ -10,8 +10,6 @@ Checkout our [paper](https://arxiv.org/abs/2406.03822) for more details.
 [[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
 <!-- [[🤗`Hugging Face`](HUGGINGFACE)] -->
 
-![fig](assets/figure.png)
-
 # Summary
 
 In this paper, we address artefacts introduces by Deep learning-based watermarking methods and introduce a way to remove the need for perceptual losses which leads to stable training allowing us to achieve SOTA in terms of both perceptual quality and robustness against distortion. Unlike previous methods which work on 16kHz sampling rate, we also showcase our results on 44.1kHz sampling rates opening the path for practical applications.
