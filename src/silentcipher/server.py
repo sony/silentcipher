@@ -49,9 +49,9 @@ class Model():
                                  message_band_size=self.config.message_band_size) for _ in range(self.n_messages)]
         # ------ make parallel ------
         if self.device != 'cpu':
-            self.enc_c = nn.DataParallel(self.enc_c)
-            self.dec_c = nn.DataParallel(self.dec_c)
-            self.dec_m = [nn.DataParallel(m) for m in self.dec_m]
+            self.enc_c = nn.DataParallel(self.enc_c.to(self.device))
+            self.dec_c = nn.DataParallel(self.dec_c.to(self.device))
+            self.dec_m = [nn.DataParallel(m.to(self.device)) for m in self.dec_m]
         
         self.average_energy_VCTK=0.002837200844477648
         self.stft = STFT(self.config.N_FFT, self.config.HOP_LENGTH)
@@ -131,7 +131,7 @@ class Model():
 
     def load_audio(self, path):
 
-        # return librosa.load(in_path, sr=None)
+        # return librosa.load(path, sr=None)
 
         audio = AudioSegment.from_file(path)
         return (np.array(audio.get_array_of_samples(), dtype=np.float32).reshape((-1, audio.channels)) / (

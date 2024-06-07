@@ -24,7 +24,8 @@ if config['enable_16k']:
     models['16k'] = silentcipher.get_model(
         model_type='16k',
         ckpt_path='../../Models/16_khz/97561_iteration', 
-        config_path='../../Models/16_khz/97561_iteration/hparams.yaml'
+        config_path='../../Models/16_khz/97561_iteration/hparams.yaml',
+        device=device
     )
 
 

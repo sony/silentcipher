@@ -1,14 +1,15 @@
 [project]
 name = "silentcipher"
-version = "1.0.0"
+version = "1.0.2"
 authors = [
   { name="Mayank Kumar Singh", email="mayank.a.singh@sony.com" },
 ]
-description = "A small example package"
-readme = "README.md"
+description = "Artefact free robust high quality audio watermarking"
+readme = "README_PYPI.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dynamic = ["dependencies"]

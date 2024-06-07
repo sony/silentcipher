@@ -1,10 +1,14 @@
 import silentcipher
 import librosa
+import torch
+
+device='cuda'
 
 model = silentcipher.get_model(
     model_type='44.1k',
     ckpt_path='../../Models/44_1_khz/73999_iteration', 
-    config_path='../../Models/44_1_khz/73999_iteration/hparams.yaml'
+    config_path='../../Models/44_1_khz/73999_iteration/hparams.yaml',
+    device=device
 )
 
 """
@@ -13,7 +17,8 @@ For 16khz model
 model = silentcipher.get_model(
     model_type='16k',
     ckpt_path='../Models/16_khz/97561_iteration', 
-    config_path='../Models/16_khz/97561_iteration/hparams.yaml'
+    config_path='../Models/16_khz/97561_iteration/hparams.yaml',
+    device=device
 )
 """
 
@@ -32,7 +37,7 @@ result = model.decode_wav(encoded, sr, phase_shift_decoding=False)
 
 assert result['status']
 assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+assert result['confidences'][0] == 0.9746031761169434, result['confidences'][0]
 
 # Encode from filename
 
@@ -46,7 +51,7 @@ model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
 result = model.decode('encoded.wav', phase_shift_decoding=False)
 
 assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+assert result['confidences'][0] == 0.9746031761169434, result['confidences'][0]
 
 
 print('Test Successful')

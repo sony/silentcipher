@@ -207,3 +207,4 @@ Thumbs.db
 tests/encoded.wav
 tests/test.wav
 Models/*
+!Models/README.md
