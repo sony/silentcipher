@@ -56,7 +56,14 @@ pip install dist/<package>.whl
 
 # :abacus: Usage
 
-SilentCipher provides a simple API to watermark and detect the watermarks from an audio sample. Example usage:
+SilentCipher provides a simple API to watermark and detect the watermarks from an audio sample.<br>
+<br>
+We showcase it in multiple ways as shown in the examples directory.<br>
+We provide a simple flask server as documented in [README_FLASK](https://github.com/sony/silentcipher/tree/master/examples/SilentCipherStandaloneServer)<br>
+You can also find a simple front-end and backend server which can be used to demonstrate the applications of silentcipher [README_UI](https://github.com/sony/silentcipher/tree/master/examples/WaterMarkingWebsite)<br>
+Some simple demo examples are also provided in the [COLAB DIR](https://github.com/sony/silentcipher/tree/master/examples/colab)
+
+Over here we provide an usage in python:
 
 ```python
 import librosa
