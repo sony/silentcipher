@@ -36,7 +36,7 @@ pip install silentcipher
 ```
 To install from source: Clone this repo and install in editable mode:
 ```
-git clone [GIT_URL]
+git clone https://github.com/sony/silentcipher.git
 pip install build
 python -m build
 pip install dist/<package>.whl
