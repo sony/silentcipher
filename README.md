@@ -36,7 +36,7 @@ pip install silentcipher
 ```
 To install from source: Clone this repo and install in editable mode:
 ```
-git clone [GIT_URL]
+git clone https://github.com/sony/silentcipher.git
 pip install build
 python -m build
 pip install dist/<package>.whl
@@ -65,7 +65,8 @@ import silentcipher
 model = silentcipher.get_model(
     model_type='44.1k', # 16k
     ckpt_path='../Models/44_1_khz/73999_iteration', 
-    config_path='../Models/44_1_khz/73999_iteration/hparams.yaml'
+    config_path='../Models/44_1_khz/73999_iteration/hparams.yaml',
+    device='cuda'  # use 'cpu' if you want to run it without GPUs
 )
 
 # Encode from waveform
@@ -79,11 +80,14 @@ encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11])
 # You can specify the message SDR (in dB) along with the encode_wav function. But this may result in unexpected detection accuracy
 # encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11], message_sdr=47)
 
+# You should set phase_shift_decoding to True when you want the decoder to be robust to audio crops.
+# !Warning, this can increase the decode time quite drastically.
+
 result = model.decode_wav(encoded, sr, phase_shift_decoding=False)
 
-assert result['status']
-assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+print(result['status'])
+print(result['messages'][0] == [123, 234, 111, 222, 11])
+print(result['confidences'][0])
 
 # Encode from filename
 
@@ -94,10 +98,13 @@ model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
 # You can specify the message SDR (in dB) along with the encode function. But this may result in unexpected detection accuracy
 # model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11], message_sdr=47)
 
+# You should set phase_shift_decoding to True when you want the decoder to be robust to audio crops.
+# !Warning, this can increase the decode time quite drastically.
+
 result = model.decode('encoded.wav', phase_shift_decoding=False)
 
-assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+print(result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0])
+print(result['confidences'][0])
 ```
 
 # Want to contribute?
