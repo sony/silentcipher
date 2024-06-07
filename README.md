@@ -1,4 +1,4 @@
-# :loud_sound: SilentCipher: Deep Audio Watermarking: [Link to arxiv](URL)
+# :loud_sound: SilentCipher: Deep Audio Watermarking: [Link to arxiv](https://arxiv.org/abs/2406.03822)
 
 <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/-Python 3.8+-blue?style=for-the-badge&logo=python&logoColor=white"></a>
 
@@ -6,7 +6,7 @@ Code for SilentCipher, a method of embedding watermarking in any audio with stat
 Currently this repository supports audio at 16kHz and 44.1kHz.<br>
 Checkout our [paper](URL) for more details.
 
-[[`arXiv`](URL)]
+[[`arXiv`](https://arxiv.org/abs/2406.03822)]
 [[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
 <!-- [[🤗`Hugging Face`](HUGGINGFACE)] -->
 
