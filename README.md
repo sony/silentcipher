@@ -81,9 +81,9 @@ encoded, sdr = model.encode_wav(y, sr, [123, 234, 111, 222, 11])
 
 result = model.decode_wav(encoded, sr, phase_shift_decoding=False)
 
-assert result['status']
-assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+print(result['status'])
+print(result['messages'][0] == [123, 234, 111, 222, 11])
+print(result['confidences'][0])
 
 # Encode from filename
 
@@ -96,8 +96,8 @@ model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
 
 result = model.decode('encoded.wav', phase_shift_decoding=False)
 
-assert result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0]
-assert result['confidences'][0] == 1, result['confidences'][0]
+print(result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0])
+print(result['confidences'][0])
 ```
 
 # Want to contribute?
