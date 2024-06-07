@@ -124,7 +124,7 @@ print(result['confidences'][0])
 <!-- # Troubleshooting -->
 # License
 
-- The code in this repository is released under the license as found in the [LICENSE file](LICENSE).
+- The code in this repository is released under the MIT license as found in the [LICENSE file](LICENSE).
 
 # Maintainers:
 - [Mayank Kumar Singh](https://github.com/mayank-git-hub)
