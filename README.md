@@ -4,13 +4,13 @@
 
 Code for SilentCipher, a method of embedding watermarking in any audio with state-of-the-art robustness.<br>
 Currently this repository supports audio at 16kHz and 44.1kHz.<br>
-Checkout our [paper](https://arxiv.org/abs/2406.03822) for more details.
+Checkout our [paper](https://arxiv.org/abs/2406.03822) for more details.<br>
+<br>
+We have posted some examples from existing watermarking algorithms and how they compare to our watermarking method at [EXAMPLES](https://interspeech2024.github.io/silentcipher/) 
 
 [[`arXiv`](https://arxiv.org/abs/2406.03822)]
 [[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
 <!-- [[🤗`Hugging Face`](HUGGINGFACE)] -->
-
-![fig](assets/figure.png)
 
 # Summary
 
@@ -44,11 +44,20 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
+<<<<<<< HEAD
     Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
   
 **Note**: Soon the models will also be released on hugging face. Stay tuned !
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
 
+=======
+**Note**: We will be uploading the model checkpoints soon. Stay Tuned!<br>
+
+# :running: Training Code
+
+**Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
+
+>>>>>>> 80f5ec1db99ce02891a6e3f6100818fb8a4dcd80
 <!-- You can find all the model checkpoints on the [Hugging Face Hub](HUGGINGFACE). We provide the checkpoints for the following models:
 
 - [SilentCipher-44.1khz](It takes a 44.1kHz audio signal as input along with the message to be embedded and generates a watermarked audio of the same size as output. This model may be useful for professional applications).
@@ -57,7 +66,14 @@ pip install dist/<package>.whl
 
 # :abacus: Usage
 
-SilentCipher provides a simple API to watermark and detect the watermarks from an audio sample. Example usage:
+SilentCipher provides a simple API to watermark and detect the watermarks from an audio sample.<br>
+<br>
+We showcase it in multiple ways as shown in the examples directory.<br>
+We provide a simple flask server as documented in [README_FLASK](https://github.com/sony/silentcipher/tree/master/examples/SilentCipherStandaloneServer)<br>
+You can also find a simple front-end and backend server which can be used to demonstrate the applications of silentcipher [README_UI](https://github.com/sony/silentcipher/tree/master/examples/WaterMarkingWebsite)<br>
+Some simple demo examples are also provided in the [COLAB DIR](https://github.com/sony/silentcipher/tree/master/examples/colab)
+
+Over here we provide an usage in python:
 
 ```python
 import librosa
