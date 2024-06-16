@@ -1,4 +1,1 @@
 Flask==2.2.5
-silentcipher
-torch==2.2.2
-numpy==1.26.4

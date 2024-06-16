@@ -1,5 +1,7 @@
 import os
 import argparse
+import re
+from tabnanny import check
 import yaml
 import time
 import numpy as np
@@ -48,10 +50,9 @@ class Model():
         self.dec_m = [MsgDecoder(message_dim=self.message_dim,
                                  message_band_size=self.config.message_band_size) for _ in range(self.n_messages)]
         # ------ make parallel ------
-        if self.device != 'cpu':
-            self.enc_c = nn.DataParallel(self.enc_c.to(self.device))
-            self.dec_c = nn.DataParallel(self.dec_c.to(self.device))
-            self.dec_m = [nn.DataParallel(m.to(self.device)) for m in self.dec_m]
+        self.enc_c = self.enc_c.to(self.device)
+        self.dec_c = self.dec_c.to(self.device)
+        self.dec_m = [m.to(self.device) for m in self.dec_m]
         
         self.average_energy_VCTK=0.002837200844477648
         self.stft = STFT(self.config.N_FFT, self.config.HOP_LENGTH)
@@ -60,6 +61,22 @@ class Model():
         self.sr = self.config.SR
 
     def letters_encoding(self, patch_len, message_lst):
+
+        """
+        Encodes a list of messages into a compact representation and a padded representation.
+
+        Args:
+            patch_len (int): The length of the patch.
+            message_lst (list): A list of messages to be encoded.
+
+        Returns:
+            tuple: A tuple containing two numpy arrays:
+                - message: A padded representation of the messages, where each message is repeated to match the patch length.
+                - message_compact: A compact representation of the messages, where each message is encoded as a one-hot vector.
+
+        Raises:
+            AssertionError: If the length of any message in message_lst is not equal to self.config.message_len - 1.
+        """
          
         message = []
         message_compact = []
@@ -81,6 +98,17 @@ class Model():
         return message, message_compact
     
     def get_best_ps(self, y_one_sec):
+
+        """
+        Calculates the best phase shift value for watermark decoding.
+
+        Args:
+            y_one_sec (numpy.ndarray): Input audio signal.
+
+        Returns:
+            int: The best phase shift value.
+
+        """
         
         def check_accuracy(pred_values):
         
@@ -102,15 +130,9 @@ class Model():
 
             for i in range(self.n_messages):  # decode each msg_i using decoder_m_i
                 msg_reconst = self.dec_m[i](carrier)
-                # soft = torch.nn.functional.softmax(msg_reconst, dim=2)
-                # max_entropy = np.ones([self.message_dim])/self.message_dim
-                # print(ps, -torch.mean(torch.sum(soft*torch.log(soft), dim=2)), -np.sum(max_entropy*np.log(max_entropy)))
                 pred_values = torch.argmax(msg_reconst[0, 0], dim=0).data.cpu().numpy()
                 pred_values = pred_values[0:int(msg_reconst.shape[3]/self.config.message_len)*self.config.message_len]
                 pred_values = pred_values.reshape([-1, self.config.message_len])
-                # print(pred_values, i)
-                # if i == 0:
-                    # return 0
                 cur_acc = check_accuracy(pred_values)
                 if cur_acc > max_accuracy:
                     max_accuracy = cur_acc
@@ -119,298 +141,309 @@ class Model():
         return final_phase_shift
     
     def get_confidence(self, pred_values, message):
-        
+        """
+        Calculates the confidence of the predicted values based on the provided message.
+
+        Parameters:
+        pred_values (numpy.ndarray): The predicted values.
+        message (str): The message used for prediction.
+
+        Returns:
+        float: The confidence score.
+
+        Raises:
+        AssertionError: If the length of the message is not equal to the number of columns in pred_values.
+
+        """
         assert len(message) == pred_values.shape[1], f'{len(message)} | {pred_values.shape}'
         return np.mean((pred_values == message[None]).astype(np.float32)).item()
     
     def sdr(self, orig, recon):
+        """
+        Calculate the Signal-to-Distortion Ratio (SDR) between the original and reconstructed signals.
+
+        Parameters:
+        orig (numpy.ndarray): The original signal.
+        recon (numpy.ndarray): The reconstructed signal.
+
+        Returns:
+        float: The Signal-to-Distortion Ratio (SDR) value.
+
+        """
+
         rms1 = ((np.mean(orig ** 2)) ** 0.5)
         rms2 = ((np.mean((orig - recon) ** 2)) ** 0.5)
         sdr = 20 * np.log10(rms1 / rms2)
         return sdr
 
     def load_audio(self, path):
+        """
+        Load an audio file from the given path and return the audio array and sample rate.
 
-        # return librosa.load(path, sr=None)
+        Args:
+            path (str): The path to the audio file.
 
+        Returns:
+            tuple: A tuple containing the audio array and sample rate.
+
+        """
         audio = AudioSegment.from_file(path)
-        return (np.array(audio.get_array_of_samples(), dtype=np.float32).reshape((-1, audio.channels)) / (
-            1 << (8 * audio.sample_width - 1)))[:, 0], audio.frame_rate, audio.channels
+        audio_array, sr = (np.array(audio.get_array_of_samples(), dtype=np.float32).reshape((-1, audio.channels)) / (
+            1 << (8 * audio.sample_width - 1))), audio.frame_rate
+        if audio_array.shape[1] == 1:
+            audio_array = audio_array[:, 0]
 
-    def encode(self, in_path, out_path, message, message_sdr=None):
+        return audio_array, sr
 
-        if message_sdr is None:
-            message_sdr = self.config.message_sdr
-            print(f'Using the default SDR of {self.config.message_sdr} dB')
+    def encode(self, in_path, out_path, message_list, message_sdr=None, calc_sdr=True, disable_checks=False):
+        """
+        Encodes a message into an audio file.
 
-        with torch.no_grad():
+        Parameters:
+        - in_path (str): The path to the input audio file.
+        - out_path (str): The path to save the output audio file.
+        - message_list (list): A list of messages to be encoded into the audio file.
+        - message_sdr (float, optional): The Signal-to-Distortion Ratio (SDR) of the message. Defaults to None.
+        - calc_sdr (bool, optional): Whether to calculate the SDR of the encoded audio. Defaults to True.
+        - disable_checks (bool, optional): Whether to disable input checks. Defaults to False.
 
-            start = time.time()
+        Returns:
+        - dict: A dictionary containing the status of the encoding process, the SDR value(s), the time taken for encoding, and the time taken per second of audio.
 
-            y, orig_sr, channels = self.load_audio(in_path)
-            if channels != 1:
-                return {'status': False, 'message': 'Currently only supporting single channel audio'}
-            orig_y = y.copy()
-            if orig_sr != self.sr:
-                if orig_sr > self.sr:
-                    print(f'WARNING! Reducing the sampling rate of the original audio from {orig_sr} -> {self.sr}. High frequency components may be lost!')
-                y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
-            original_power = np.mean(y**2)
+        """
+        y, orig_sr = self.load_audio(in_path)
+        start = time.time()
+        encoded_y, sdr = self.encode_wav(y, orig_sr, message_list=message_list, message_sdr=message_sdr, calc_sdr=calc_sdr, disable_checks=disable_checks)
+        time_taken = time.time() - start
+        sf.write(out_path, encoded_y, orig_sr)
 
-            y = y * np.sqrt(self.average_energy_VCTK / original_power)  # Noise has a power of 5% power of VCTK samples
-            y = torch.FloatTensor(y).unsqueeze(0).unsqueeze(0).to(self.device)
-            carrier, carrier_phase = self.stft.transform(y.squeeze(1))
-            carrier = carrier[:, None]
-            carrier_phase = carrier_phase[:, None]
-
-            def binary_encode(mes):
-                binary_message = ''.join(['{0:08b}'.format(mes_i) for mes_i in mes])
-                four_bit_msg = []
-                for i in range(len(binary_message)//2):
-                    four_bit_msg.append(int(binary_message[i*2:i*2+2], 2))
-                return four_bit_msg
-            
-            binary_encoded_message = binary_encode(message)
-            # print(binary_encoded_message)
-
-            msgs, msgs_compact = self.letters_encoding(carrier.shape[3], [binary_encoded_message])
-            msg_enc = torch.from_numpy(msgs[None]).to(self.device).float()
-
-            carrier_enc = self.enc_c(carrier)  # encode the carrier
-            # print(carrier.shape, carrier_enc.shape)  # torch.Size([8, 1, 129, 1036]) torch.Size([8, 32, 129, 1036])
-            if self.device == 'cpu':
-                msg_enc = self.enc_c.transform_message(msg_enc)
-            else:
-                msg_enc = self.enc_c.module.transform_message(msg_enc)
-
-            # print(carrier_enc.shape, carrier.shape, msg_enc.shape)
-            merged_enc = torch.cat((carrier_enc, carrier.repeat(1, 32, 1, 1), msg_enc.repeat(1, 32, 1, 1)), dim=1)  # concat encodings on features axis
-            
-            message_info = self.dec_c(merged_enc, message_sdr)
-            if self.config.frame_level_normalization:
-                message_info = message_info*(torch.mean((carrier**2), dim=2, keepdim=True)**0.5)  # *time_weighing
-            elif self.config.utterance_level_normalization:
-                message_info = message_info*(torch.mean((carrier**2), dim=(2,3), keepdim=True)**0.5)  # *time_weighing
-            
-            if self.config.ensure_negative_message:
-                message_info = -message_info
-                carrier_reconst = torch.nn.functional.relu(message_info + carrier)  # decode carrier, output in stft domain
-            elif self.config.ensure_constrained_message:
-                message_info[message_info > carrier] = carrier[message_info > carrier]
-                message_info[-message_info > carrier] = -carrier[-message_info > carrier]
-                carrier_reconst = message_info + carrier  # decode carrier, output in stft domain
-                assert torch.all(carrier_reconst >= 0), 'negative values found in carrier_reconst'
-            else:
-                carrier_reconst = torch.abs(message_info + carrier)  # decode carrier, output in stft domain
-
-            self.stft.num_samples = y.shape[2]
-
-            y = self.stft.inverse(carrier_reconst.squeeze(1), carrier_phase.squeeze(1)).data.cpu().numpy()[0, 0]
-            y = y * np.sqrt(original_power / (self.average_energy_VCTK))  # Noise has a power of 5% power of VCTK samples
-            if orig_sr != self.sr:
-                y = librosa.resample(y, orig_sr = self.sr, target_sr = orig_sr)
-
-            # print(y.shape, orig_y.shape, self.stft.num_samples, orig_sr, self.sr)
-            time_taken = time.time() - start
-            # print('Time taken to encode', time_taken)
-            # print('Time taken per second of audio to encode', time_taken / (y.shape[0] / orig_sr))
-            sdr = self.sdr(orig_y, y)
-            sf.write(out_path, y, orig_sr)
-            
-        return {'status': True, 'sdr': f'{sdr:.2f}', 'time_taken': time_taken, 'time_taken_per_second': time_taken / (y.shape[0] / orig_sr)}
+        if type(sdr) == list:
+            return {'status': True, 'sdr': [f'{sdr_i:.2f}' for sdr_i in sdr], 'time_taken': time_taken, 'time_taken_per_second': time_taken / (y.shape[0] / orig_sr)}
+        else:
+            return {'status': True, 'sdr': f'{sdr:.2f}', 'time_taken': time_taken, 'time_taken_per_second': time_taken / (y.shape[0] / orig_sr)}
     
     def decode(self, path, phase_shift_decoding):
-        try:
-            with torch.no_grad():
-                y, orig_sr, channels = self.load_audio(path)
-                if channels != 1:
-                    return {'status': False, 'message': 'Currently only supporting single channel audio'}
-                if orig_sr != self.sr:
-                    y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
-                original_power = np.mean(y**2)
-                y = y * np.sqrt(self.average_energy_VCTK / original_power)  # Noise has a power of 5% power of VCTK samples
-                if phase_shift_decoding and phase_shift_decoding != 'false':
-                    ps = self.get_best_ps(y)
-                else:
-                    ps = 0
-                y = torch.FloatTensor(y[ps:]).unsqueeze(0).unsqueeze(0).to(self.device)
-                carrier, _ = self.stft.transform(y.squeeze(1))
-                carrier = carrier[:, None]
+        """
+        Decode the audio file at the given path using phase shift decoding.
 
-                msg_reconst_list = []
-                confidence = []
+        Parameters:
+        path (str): The path to the audio file.
+        phase_shift_decoding (bool): Flag indicating whether to use phase shift decoding.
 
-                for i in range(self.n_messages):  # decode each msg_i using decoder_m_i
-                    msg_reconst = self.dec_m[i](carrier)
-                    pred_values = torch.argmax(msg_reconst[0, 0], dim=0).data.cpu().numpy()
-                    pred_values = pred_values[0:int(msg_reconst.shape[3]/self.config.message_len)*self.config.message_len]
-                    pred_values = pred_values.reshape([-1, self.config.message_len])
+        Returns:
+        dictionary: A dictionary containing the decoded message status and value
+        """
+        
+        y, orig_sr = self.load_audio(path)
 
-                    ord_values = st.mode(pred_values, keepdims=False).mode
-                    end_char = np.min(np.nonzero(ord_values == 0)[0])
-                    confidence.append(self.get_confidence(pred_values, ord_values))
-                    if end_char == self.config.message_len:
-                        ord_values = ord_values[:self.config.message_len-1]
-                    else:
-                        ord_values = np.concatenate([ord_values[end_char+1:], ord_values[:end_char]], axis=0)
-
-                    # pred_values = ''.join([chr(v + 64) for v in ord_values])
-                    msg_reconst_list.append((ord_values - 1).tolist())
-                
-                def convert_to_8_bit_segments(msg_list):
-                    segment_message_list = []
-                    for msg_list_i in msg_list:
-                        binary_format = ''.join(['{0:02b}'.format(mes_i) for mes_i in msg_list_i])
-                        eight_bit_segments = [int(binary_format[i*8:i*8+8], 2) for i in range(len(binary_format)//8)]
-                        segment_message_list.append(eight_bit_segments)
-                    return segment_message_list
-                msg_reconst_list = convert_to_8_bit_segments(msg_reconst_list)
-            return {'messages': msg_reconst_list, 'confidences': confidence, 'status': True}
-        except:
-            return {'messages': [], 'confidences': [], 'error': 'Could not find message', 'status': False}
+        return self.decode_wav(y, orig_sr, phase_shift_decoding)
     
-    def encode_wav(self, y, orig_sr, message, message_sdr=None):
+    def encode_wav(self, y_multi_channel, orig_sr, message_list, message_sdr=None, calc_sdr=True, disable_checks=False):
+
+        """
+        Encodes a multi-channel audio waveform with a given message.
+
+        Args:
+            y_multi_channel (numpy.ndarray): The multi-channel audio waveform to be encoded.
+            orig_sr (int): The original sampling rate of the audio waveform.
+            message_list (list): The list of messages to be encoded. Each message may correspond to a channel in the audio waveform.
+            message_sdr (float, optional): The signal-to-distortion ratio (SDR) of the message. If not provided, the default SDR from the configuration is used.
+            calc_sdr (bool, optional): Flag indicating whether to calculate the SDR of the encoded waveform. Defaults to True.
+            disable_checks (bool, optional): Flag indicating whether to disable input audio checks. Defaults to False.
+
+        Returns:
+            tuple: A tuple containing the encoded multi-channel audio waveform and the SDR (if calculated).
+
+        Raises:
+            AssertionError: If the number of messages does not match the number of channels in the input audio waveform.
+        """
+        
+        single_channel = False
+        if len(y_multi_channel.shape) == 1:
+            single_channel = True
+            y_multi_channel = y_multi_channel[:, None]
 
         if message_sdr is None:
             message_sdr = self.config.message_sdr
             print(f'Using the default SDR of {self.config.message_sdr} dB')
 
-        with torch.no_grad():
+        if type(message_list[0]) == int:
+            message_list = [message_list]*y_multi_channel.shape[1]
 
-            start = time.time()
+        y_watermarked_multi_channel = []
+        sdrs = []
+
+        assert len(message_list) == y_multi_channel.shape[1], f'{len(message_list)} | {y_multi_channel.shape[1]} Mismatch in the number of messages and channels in the input audio.'
         
-            orig_y = y.copy()
-            if orig_sr != self.sr:
-                if orig_sr > self.sr:
-                    print(f'WARNING! Reducing the sampling rate of the original audio from {orig_sr} -> {self.sr}. High frequency components may be lost!')
-                y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
-            original_power = np.mean(y**2)
+        for channel_i in range(y_multi_channel.shape[1]):
+            y = y_multi_channel[:, channel_i]
+            message = message_list[channel_i]
 
-            y = y * np.sqrt(self.average_energy_VCTK / original_power)  # Noise has a power of 5% power of VCTK samples
-            y = torch.FloatTensor(y).unsqueeze(0).unsqueeze(0).to(self.device)
-            carrier, carrier_phase = self.stft.transform(y.squeeze(1))
-            carrier = carrier[:, None]
-            carrier_phase = carrier_phase[:, None]
-
-            def binary_encode(mes):
-                binary_message = ''.join(['{0:08b}'.format(mes_i) for mes_i in mes])
-                four_bit_msg = []
-                for i in range(len(binary_message)//2):
-                    four_bit_msg.append(int(binary_message[i*2:i*2+2], 2))
-                return four_bit_msg
-            
-            binary_encoded_message = binary_encode(message)
-            # print(binary_encoded_message)
-
-            msgs, msgs_compact = self.letters_encoding(carrier.shape[3], [binary_encoded_message])
-            msg_enc = torch.from_numpy(msgs[None]).to(self.device).float()
-
-            carrier_enc = self.enc_c(carrier)  # encode the carrier
-            # print(carrier.shape, carrier_enc.shape)  # torch.Size([8, 1, 129, 1036]) torch.Size([8, 32, 129, 1036])
-            if self.device == 'cpu':
-                msg_enc = self.enc_c.transform_message(msg_enc)
-            else:
-                msg_enc = self.enc_c.module.transform_message(msg_enc)
-
-            # print(carrier_enc.shape, carrier.shape, msg_enc.shape)
-            merged_enc = torch.cat((carrier_enc, carrier.repeat(1, 32, 1, 1), msg_enc.repeat(1, 32, 1, 1)), dim=1)  # concat encodings on features axis
-            
-            message_info = self.dec_c(merged_enc, message_sdr)
-            if self.config.frame_level_normalization:
-                message_info = message_info*(torch.mean((carrier**2), dim=2, keepdim=True)**0.5)  # *time_weighing
-            elif self.config.utterance_level_normalization:
-                message_info = message_info*(torch.mean((carrier**2), dim=(2,3), keepdim=True)**0.5)  # *time_weighing
-            
-            if self.config.ensure_negative_message:
-                message_info = -message_info
-                carrier_reconst = torch.nn.functional.relu(message_info + carrier)  # decode carrier, output in stft domain
-            elif self.config.ensure_constrained_message:
-                message_info[message_info > carrier] = carrier[message_info > carrier]
-                message_info[-message_info > carrier] = -carrier[-message_info > carrier]
-                carrier_reconst = message_info + carrier  # decode carrier, output in stft domain
-                assert torch.all(carrier_reconst >= 0), 'negative values found in carrier_reconst'
-            else:
-                carrier_reconst = torch.abs(message_info + carrier)  # decode carrier, output in stft domain
-
-            self.stft.num_samples = y.shape[2]
-
-            y = self.stft.inverse(carrier_reconst.squeeze(1), carrier_phase.squeeze(1)).data.cpu().numpy()[0, 0]
-            y = y * np.sqrt(original_power / (self.average_energy_VCTK))  # Noise has a power of 5% power of VCTK samples
-            if orig_sr != self.sr:
-                y = librosa.resample(y, orig_sr = self.sr, target_sr = orig_sr)
-
-            # print(y.shape, orig_y.shape, self.stft.num_samples, orig_sr, self.sr)
-            time_taken = time.time() - start
-            # print('Time taken to encode', time_taken)
-            # print('Time taken per second of audio to encode', time_taken / (y.shape[0] / orig_sr))
-            sdr = self.sdr(orig_y, y)
-            
-        return y, sdr
-    
-    def decode_wav(self, y, orig_sr, phase_shift_decoding):
-        # print(path, phase_shift_decoding)
-        try:
             with torch.no_grad():
+
+                orig_y = y.copy()
                 if orig_sr != self.sr:
+                    if orig_sr > self.sr:
+                        print(f'WARNING! Reducing the sampling rate of the original audio from {orig_sr} -> {self.sr}. High frequency components may be lost!')
                     y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
                 original_power = np.mean(y**2)
+
+                if not disable_checks:
+                    if original_power == 0:
+                        print('WARNING! The input audio has a power of 0.This means the audio is likely just silence. Skipping encoding.')
+                        return orig_y, 0
+
                 y = y * np.sqrt(self.average_energy_VCTK / original_power)  # Noise has a power of 5% power of VCTK samples
-                if phase_shift_decoding and phase_shift_decoding != 'false':
-                    ps = self.get_best_ps(y)
-                else:
-                    ps = 0
-                y = torch.FloatTensor(y[ps:]).unsqueeze(0).unsqueeze(0).to(self.device)
-                carrier, _ = self.stft.transform(y.squeeze(1))
+                y = torch.FloatTensor(y).unsqueeze(0).unsqueeze(0).to(self.device)
+                carrier, carrier_phase = self.stft.transform(y.squeeze(1))
                 carrier = carrier[:, None]
+                carrier_phase = carrier_phase[:, None]
 
-                msg_reconst_list = []
-                confidence = []
-
-                for i in range(self.n_messages):  # decode each msg_i using decoder_m_i
-                    msg_reconst = self.dec_m[i](carrier)
-                    pred_values = torch.argmax(msg_reconst[0, 0], dim=0).data.cpu().numpy()
-                    pred_values = pred_values[0:int(msg_reconst.shape[3]/self.config.message_len)*self.config.message_len]
-                    pred_values = pred_values.reshape([-1, self.config.message_len])
-
-                    ord_values = st.mode(pred_values, keepdims=False).mode
-                    end_char = np.min(np.nonzero(ord_values == 0)[0])
-                    confidence.append(self.get_confidence(pred_values, ord_values))
-                    if end_char == self.config.message_len:
-                        ord_values = ord_values[:self.config.message_len-1]
-                    else:
-                        ord_values = np.concatenate([ord_values[end_char+1:], ord_values[:end_char]], axis=0)
-
-                    # pred_values = ''.join([chr(v + 64) for v in ord_values])
-                    msg_reconst_list.append((ord_values - 1).tolist())
+                def binary_encode(mes):
+                    binary_message = ''.join(['{0:08b}'.format(mes_i) for mes_i in mes])
+                    four_bit_msg = []
+                    for i in range(len(binary_message)//2):
+                        four_bit_msg.append(int(binary_message[i*2:i*2+2], 2))
+                    return four_bit_msg
                 
-                def convert_to_8_bit_segments(msg_list):
-                    segment_message_list = []
-                    for msg_list_i in msg_list:
-                        binary_format = ''.join(['{0:02b}'.format(mes_i) for mes_i in msg_list_i])
-                        eight_bit_segments = [int(binary_format[i*8:i*8+8], 2) for i in range(len(binary_format)//8)]
-                        segment_message_list.append(eight_bit_segments)
-                    return segment_message_list
-                msg_reconst_list = convert_to_8_bit_segments(msg_reconst_list)
-            return {'messages': msg_reconst_list, 'confidences': confidence, 'status': True}
-        except:
-            return {'messages': [], 'confidences': [], 'error': 'Could not find message', 'status': False}
-    
-    def convert_dataparallel_to_normal(self, dictionary):
+                binary_encoded_message = binary_encode(message)
 
-        return {i[len('module.'):]: dictionary[i] for i in dictionary}
+                msgs, msgs_compact = self.letters_encoding(carrier.shape[3], [binary_encoded_message])
+                msg_enc = torch.from_numpy(msgs[None]).to(self.device).float()
+
+                carrier_enc = self.enc_c(carrier)  # encode the carrier
+                msg_enc = self.enc_c.transform_message(msg_enc)
+
+                merged_enc = torch.cat((carrier_enc, carrier.repeat(1, 32, 1, 1), msg_enc.repeat(1, 32, 1, 1)), dim=1)  # concat encodings on features axis
+                
+                message_info = self.dec_c(merged_enc, message_sdr)
+                if self.config.frame_level_normalization:
+                    message_info = message_info*(torch.mean((carrier**2), dim=2, keepdim=True)**0.5)  # *time_weighing
+                elif self.config.utterance_level_normalization:
+                    message_info = message_info*(torch.mean((carrier**2), dim=(2,3), keepdim=True)**0.5)  # *time_weighing
+                
+                if self.config.ensure_negative_message:
+                    message_info = -message_info
+                    carrier_reconst = torch.nn.functional.relu(message_info + carrier)  # decode carrier, output in stft domain
+                elif self.config.ensure_constrained_message:
+                    message_info[message_info > carrier] = carrier[message_info > carrier]
+                    message_info[-message_info > carrier] = -carrier[-message_info > carrier]
+                    carrier_reconst = message_info + carrier  # decode carrier, output in stft domain
+                    assert torch.all(carrier_reconst >= 0), 'negative values found in carrier_reconst'
+                else:
+                    carrier_reconst = torch.abs(message_info + carrier)  # decode carrier, output in stft domain
+
+                self.stft.num_samples = y.shape[2]
+
+                y = self.stft.inverse(carrier_reconst.squeeze(1), carrier_phase.squeeze(1)).data.cpu().numpy()[0, 0]
+                y = y * np.sqrt(original_power / (self.average_energy_VCTK))  # Noise has a power of 5% power of VCTK samples
+                if orig_sr != self.sr:
+                    y = librosa.resample(y, orig_sr = self.sr, target_sr = orig_sr)
+
+                if calc_sdr:
+                    sdr = self.sdr(orig_y, y)
+                else:
+                    sdr = 0
+
+            y_watermarked_multi_channel.append(y[:, None])
+            sdrs.append(sdr)
+        
+        y_watermarked_multi_channel = np.concatenate(y_watermarked_multi_channel, axis=1)
+
+        if single_channel:
+            y_watermarked_multi_channel = y_watermarked_multi_channel[:, 0]
+            sdrs = sdrs[0]
+        
+        return y_watermarked_multi_channel, sdrs
+    
+    def decode_wav(self, y_multi_channel, orig_sr, phase_shift_decoding):
+        """
+        Decode the given audio waveform to extract hidden messages.
+
+        Args:
+            y_multi_channel (numpy.ndarray): The multi-channel audio waveform.
+            orig_sr (int): The original sample rate of the audio waveform.
+            phase_shift_decoding (str): Flag indicating whether to perform phase shift decoding.
+
+        Returns:
+            dict or list: A list of dictionary containing the decoded messages, confidences, and status for each channel if the input is multi-channel.
+                          Otherwise, a dictionary containing the decoded messages, confidences, and status for a single channel.
+
+        Raises:
+            Exception: If the decoding process fails.
+
+        """
+        single_channel = False
+        if len(y_multi_channel.shape) == 1:
+            single_channel = True
+            y_multi_channel = y_multi_channel[:, None]
+        
+        results = []
+        
+        for channel_i in range(y_multi_channel.shape[1]):
+            y = y_multi_channel[:, channel_i]
+            try:
+                with torch.no_grad():
+                    if orig_sr != self.sr:
+                        y = librosa.resample(y, orig_sr = orig_sr, target_sr = self.sr)
+                    original_power = np.mean(y**2)
+                    y = y * np.sqrt(self.average_energy_VCTK / original_power)  # Noise has a power of 5% power of VCTK samples
+                    if phase_shift_decoding and phase_shift_decoding != 'false':
+                        ps = self.get_best_ps(y)
+                    else:
+                        ps = 0
+                    y = torch.FloatTensor(y[ps:]).unsqueeze(0).unsqueeze(0).to(self.device)
+                    carrier, _ = self.stft.transform(y.squeeze(1))
+                    carrier = carrier[:, None]
+
+                    msg_reconst_list = []
+                    confidence = []
+
+                    for i in range(self.n_messages):  # decode each msg_i using decoder_m_i
+                        msg_reconst = self.dec_m[i](carrier)
+                        pred_values = torch.argmax(msg_reconst[0, 0], dim=0).data.cpu().numpy()
+                        pred_values = pred_values[0:int(msg_reconst.shape[3]/self.config.message_len)*self.config.message_len]
+                        pred_values = pred_values.reshape([-1, self.config.message_len])
+
+                        ord_values = st.mode(pred_values, keepdims=False).mode
+                        end_char = np.min(np.nonzero(ord_values == 0)[0])
+                        confidence.append(self.get_confidence(pred_values, ord_values))
+                        if end_char == self.config.message_len:
+                            ord_values = ord_values[:self.config.message_len-1]
+                        else:
+                            ord_values = np.concatenate([ord_values[end_char+1:], ord_values[:end_char]], axis=0)
+
+                        # pred_values = ''.join([chr(v + 64) for v in ord_values])
+                        msg_reconst_list.append((ord_values - 1).tolist())
+                    
+                    def convert_to_8_bit_segments(msg_list):
+                        segment_message_list = []
+                        for msg_list_i in msg_list:
+                            binary_format = ''.join(['{0:02b}'.format(mes_i) for mes_i in msg_list_i])
+                            eight_bit_segments = [int(binary_format[i*8:i*8+8], 2) for i in range(len(binary_format)//8)]
+                            segment_message_list.append(eight_bit_segments)
+                        return segment_message_list
+                    msg_reconst_list = convert_to_8_bit_segments(msg_reconst_list)
+                
+                results.append({'messages': msg_reconst_list, 'confidences': confidence, 'status': True})
+            except:
+                results.append({'messages': [], 'confidences': [], 'error': 'Could not find message', 'status': False})
+
+        if single_channel:
+            results = results[0]
+        
+        return results
+    
+    def convert_dataparallel_to_normal(self, checkpoint):
+
+        return {i[len('module.'):] if i.startswith('module.') else i: checkpoint[i] for i in checkpoint }
 
     def load_models(self, ckpt_dir):
 
-        if self.device == 'cpu':
-            self.enc_c.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, "enc_c.ckpt"), map_location=self.device)))
-            self.dec_c.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, "dec_c.ckpt"), map_location=self.device)))
-            for i,m in enumerate(self.dec_m):
-                m.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, f"dec_m_{i}.ckpt"), map_location=self.device)))
-        else:
-            self.enc_c.load_state_dict(torch.load(os.path.join(ckpt_dir, "enc_c.ckpt"), map_location=self.device))
-            self.dec_c.load_state_dict(torch.load(os.path.join(ckpt_dir, "dec_c.ckpt"), map_location=self.device))
-            for i,m in enumerate(self.dec_m):
-                m.load_state_dict(torch.load(os.path.join(ckpt_dir, f"dec_m_{i}.ckpt"), map_location=self.device))
+        self.enc_c.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, "enc_c.ckpt"), map_location=self.device)))
+        self.dec_c.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, "dec_c.ckpt"), map_location=self.device)))
+        for i,m in enumerate(self.dec_m):
+            m.load_state_dict(self.convert_dataparallel_to_normal(torch.load(os.path.join(ckpt_dir, f"dec_m_{i}.ckpt"), map_location=self.device)))
 
 
 def get_model(model_type='44.1k', ckpt_path='../Models/44_1_khz/73999_iteration', config_path='../Models/44_1_khz/73999_iteration/hparams.yaml', device='cpu'):

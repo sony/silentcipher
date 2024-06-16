@@ -34,7 +34,7 @@ To install from PyPI:
 ```
 pip install silentcipher
 ```
-To install from source: Clone this repo and install in editable mode:
+To install from source: Clone this repo and run the following commands:
 ```
 git clone https://github.com/sony/silentcipher.git
 pip install build
@@ -44,9 +44,10 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
-**Note**: We will be uploading the model checkpoints soon. Stay Tuned!<br>
+    Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
+  
+**Note**: Soon the models will also be released on hugging face. Stay tuned !
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
-
 
 <!-- You can find all the model checkpoints on the [Hugging Face Hub](HUGGINGFACE). We provide the checkpoints for the following models:
 
@@ -64,14 +65,14 @@ import silentcipher
 
 model = silentcipher.get_model(
     model_type='44.1k', # 16k
-    ckpt_path='../Models/44_1_khz/73999_iteration', 
-    config_path='../Models/44_1_khz/73999_iteration/hparams.yaml',
+    ckpt_path='Models/44_1_khz/73999_iteration', 
+    config_path='Models/44_1_khz/73999_iteration/hparams.yaml',
     device='cuda'  # use 'cpu' if you want to run it without GPUs
 )
 
 # Encode from waveform
 
-y, sr = librosa.load('test.wav', sr=None)
+y, sr = librosa.load('examples/colab/test.wav', sr=None)
 
 # The message should be in the form of five 8-bit characters, giving a total message capacity of 40 bits 
 
@@ -93,7 +94,7 @@ print(result['confidences'][0])
 
 # The message should be in the form of five 8-bit characters, giving a total message capacity of 40 bits 
 
-model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
+model.encode('examples/colab/test.wav', 'examples/colab/encoded.wav', [123, 234, 111, 222, 11])
 
 # You can specify the message SDR (in dB) along with the encode function. But this may result in unexpected detection accuracy
 # model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11], message_sdr=47)
@@ -101,11 +102,18 @@ model.encode('test.wav', 'encoded.wav', [123, 234, 111, 222, 11])
 # You should set phase_shift_decoding to True when you want the decoder to be robust to audio crops.
 # !Warning, this can increase the decode time quite drastically.
 
-result = model.decode('encoded.wav', phase_shift_decoding=False)
+result = model.decode('examples/colab/encoded.wav', phase_shift_decoding=False)
 
 print(result['messages'][0] == [123, 234, 111, 222, 11], result['messages'][0])
 print(result['confidences'][0])
 ```
+
+# Demo Programs 
+
+1. [Python demo program with more detailed usage](https://github.com/sony/silentcipher/blob/master/examples/colab/demo.py)
+2. [Colab Google](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)
+3. [A standalone flask server](https://github.com/sony/silentcipher/tree/master/examples/SilentCipherStandaloneServer)
+4. [A demo project management UI based on angular + django + flask](https://github.com/sony/silentcipher/tree/master/examples/WaterMarkingWebsite)
 
 # Want to contribute?
 
@@ -115,7 +123,7 @@ print(result['confidences'][0])
 <!-- # Troubleshooting -->
 # License
 
-- The code in this repository is released under the license as found in the [LICENSE file](LICENSE).
+- The code in this repository is released under the MIT license as found in the [LICENSE file](LICENSE).
 
 # Maintainers:
 - [Mayank Kumar Singh](https://github.com/mayank-git-hub)

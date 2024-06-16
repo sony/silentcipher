@@ -1,3 +1,4 @@
+from email import message
 from flask import Flask, request
 import json
 import torch
@@ -44,7 +45,12 @@ def encode():
     else:
         return json.dumps({'status': False, 'message': f'{request.json["model_type"]} Model type not implemented'}) # type: ignore
     
-    response = json.dumps(model.encode(request.json['in_path'], request.json['out_path'], request.json['message'], request.json['message_sdr'])) # type: ignore
+    if request.json['message_sdr'] is not None: # type: ignore
+        message_sdr = float(request.json['message_sdr']) # type: ignore
+    else:
+        message_sdr = None
+    
+    response = json.dumps(model.encode(request.json['in_path'], request.json['out_path'], request.json['message'], message_sdr)) # type: ignore
     return response
 
 @app.route('/decode', methods=['POST'])

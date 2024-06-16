@@ -68,7 +68,8 @@ export class AudioPage implements OnInit {
   }
 
   decodeDistortedAudio(){
-    this.http.post(environment.SERVER_URL + 'api/decode_file_location', {path: this.distorted_path, phase_shift_decoding: environment.phase_shift_decoding}, {params: {loading: 'true'}}).subscribe((res: any) => {
+    this.notificationService.presentToastSuccess('Decoding using the 44k model. To use the 16k model, please use the python package or submit a PR to the repo.');
+    this.http.post(environment.SERVER_URL + 'api/decode_file_location', {model_type: '44k', path: this.distorted_path, phase_shift_decoding: environment.phase_shift_decoding}, {params: {loading: 'true'}}).subscribe((res: any) => {
       if (res.status){
         this.decoded = res.decode.messages[0]
         this.error=false;
