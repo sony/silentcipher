@@ -44,20 +44,11 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
-<<<<<<< HEAD
     Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
   
 **Note**: Soon the models will also be released on hugging face. Stay tuned !
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
 
-=======
-**Note**: We will be uploading the model checkpoints soon. Stay Tuned!<br>
-
-# :running: Training Code
-
-**Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
-
->>>>>>> 80f5ec1db99ce02891a6e3f6100818fb8a4dcd80
 <!-- You can find all the model checkpoints on the [Hugging Face Hub](HUGGINGFACE). We provide the checkpoints for the following models:
 
 - [SilentCipher-44.1khz](It takes a 44.1kHz audio signal as input along with the message to be embedded and generates a watermarked audio of the same size as output. This model may be useful for professional applications).
