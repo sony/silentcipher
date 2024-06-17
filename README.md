@@ -44,7 +44,7 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
-    Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
+Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
   
 **Note**: Soon the models will also be released on hugging face. Stay tuned !
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
