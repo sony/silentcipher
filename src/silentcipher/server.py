@@ -1,3 +1,4 @@
+from calendar import c
 import os
 import argparse
 import re
@@ -449,11 +450,25 @@ class Model():
 def get_model(model_type='44.1k', ckpt_path='../Models/44_1_khz/73999_iteration', config_path='../Models/44_1_khz/73999_iteration/hparams.yaml', device='cpu'):
 
     if model_type == '44.1k':
+        if not os.path.exists(ckpt_path) or not os.path.exists(config_path):
+            print('ckpt path or config path does not exist! Downloading the model from the Hugging Face Hub...')
+            from huggingface_hub import snapshot_download
+            folder_dir = snapshot_download(repo_id="sony/silentcipher")
+            ckpt_path = os.path.join(folder_dir, '44_1_khz/73999_iteration')
+            config_path = os.path.join(folder_dir, '44_1_khz/73999_iteration/hparams.yaml')
+
         config = yaml.safe_load(open(config_path))
         config = argparse.Namespace(**config)
         config.load_ckpt = ckpt_path
         model = Model(config, device)
     elif model_type == '16k':
+        if not os.path.exists(ckpt_path) or not os.path.exists(config_path):
+            print('ckpt path or config path does not exist! Downloading the model from the Hugging Face Hub...')
+            from huggingface_hub import snapshot_download
+            folder_dir = snapshot_download(repo_id="sony/silentcipher")
+            ckpt_path = os.path.join(folder_dir, '16_khz/97561_iteration')
+            config_path = os.path.join(folder_dir, '16_khz/97561_iteration/hparams.yaml')
+
         config = yaml.safe_load(open(config_path))
         config = argparse.Namespace(**config)
         config.load_ckpt = ckpt_path

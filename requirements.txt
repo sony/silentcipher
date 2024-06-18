@@ -6,3 +6,4 @@ scipy>=1.11.4
 pyaml>=24.4.0
 Flask>=2.2.5
 pydub>=0.25.1
+huggingface-hub>=0.23.4
