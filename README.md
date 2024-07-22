@@ -10,7 +10,7 @@ We have posted some examples from existing watermarking algorithms and how they 
 
 [[`arXiv`](https://arxiv.org/abs/2406.03822)]
 [[`Colab notebook`](https://colab.research.google.com/github/sony/silentcipher/blob/master/examples/colab/demo.ipynb)]
-<!-- [[🤗`Hugging Face`](HUGGINGFACE)] -->
+[[🤗`Hugging Face`](https://huggingface.co/Sony/SilentCipher)]
 
 # Summary
 
@@ -44,16 +44,10 @@ pip install dist/<package>.whl
 
 # :gear: Models
 
-Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)
-  
-**Note**: Soon the models will also be released on hugging face. Stay tuned !
+Find the latest models for 44.1kHz and 16kHz sampling rate in the release section of this repository [RELEASE](https://github.com/sony/silentcipher/releases)<br>
+The models have also been released on [HuggingFace](https://huggingface.co/Sony/SilentCipher)<br>
+
 **Note**: We are working to release the training code for anyone wants to build their own watermarker. Stay tuned !
-
-<!-- You can find all the model checkpoints on the [Hugging Face Hub](HUGGINGFACE). We provide the checkpoints for the following models:
-
-- [SilentCipher-44.1khz](It takes a 44.1kHz audio signal as input along with the message to be embedded and generates a watermarked audio of the same size as output. This model may be useful for professional applications).
-- [SilentCipher-16khz](It takes a 16kHz audio signal as input along with the message to be embedded and generates a watermarked audio of the same size as output. This model may be useful for deep learning based applications which generate audio inherently at 16kHz). -->
-
 
 # :abacus: Usage
 
@@ -72,10 +66,11 @@ import silentcipher
 
 model = silentcipher.get_model(
     model_type='44.1k', # 16k
-    ckpt_path='Models/44_1_khz/73999_iteration', 
-    config_path='Models/44_1_khz/73999_iteration/hparams.yaml',
     device='cuda'  # use 'cpu' if you want to run it without GPUs
 )
+# By default the model is loaded using hugging face APIs, but you can specify the ckpt_path and config_path manually as well
+# ckpt_path='Models/44_1_khz/73999_iteration', 
+# config_path='Models/44_1_khz/73999_iteration/hparams.yaml',
 
 # Encode from waveform
 

@@ -5,20 +5,20 @@ device='cuda'
 
 model = silentcipher.get_model(
     model_type='44.1k',
-    ckpt_path='../../Models/44_1_khz/73999_iteration', 
-    config_path='../../Models/44_1_khz/73999_iteration/hparams.yaml',
     device=device
 )
+# ckpt_path='../../Models/44_1_khz/73999_iteration', 
+# config_path='../../Models/44_1_khz/73999_iteration/hparams.yaml',
 
 """
 For 16khz model
 
 model = silentcipher.get_model(
     model_type='16k',
-    ckpt_path='../Models/16_khz/97561_iteration', 
-    config_path='../Models/16_khz/97561_iteration/hparams.yaml',
     device=device
 )
+# ckpt_path='../Models/16_khz/97561_iteration', 
+# config_path='../Models/16_khz/97561_iteration/hparams.yaml',
 """
 
 def test(y, sr, filename, encoded_filename):
