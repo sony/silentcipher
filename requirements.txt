@@ -1,5 +1,5 @@
 librosa>=0.9.0rc0
-torch>=1.8.0,<=2.0.0
+torch>=1.8.0,<=2.1.0
 numpy>=1.25.2
 soundfile>=0.12.1
 scipy>=1.11.4
